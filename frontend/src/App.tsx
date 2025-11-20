@@ -1,105 +1,94 @@
-import React, { useState } from "react";
-import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
-import type { DropResult } from "@hello-pangea/dnd";
 
-// Mock Data for testing UI
-const initialData = {
-  columns: {
-    "col-1": {
-      id: "col-1",
-      title: "To Do",
-      items: [
-        { id: "task-1", content: "Setup MongoDB" },
-        { id: "task-2", content: "Build React UI" },
-        { id: "task-3", content: "Submit Assignment" },
-      ],
-    },
-  },
-  columnOrder: ["col-1"],
-};
+import { DragDropContext } from "@hello-pangea/dnd";
+import { useBoard } from "./hooks/useBoard";
+import { Column } from "./components/Column";
 
-function App() {
-  const [boardData, setBoardData] = useState(initialData);
+function App(){
+    const { boardData, loading, onDragEnd, addTask, deleteTask, addColumn, deleteColumn, updateColumn, updateTask} = useBoard();
 
-  const onDragEnd = (result: DropResult) => {
-    const { destination, source } = result;
-
-    // 1. Dropped outside
-    if (!destination) return;
-
-    // 2. Dropped in same spot
-    if (
-      destination.droppableId === source.droppableId &&
-      destination.index === source.index
-    ) {
-      return;
+    if (loading || !boardData) {
+        return (
+            <div className="h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <div className="relative">
+                        <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4"></div>
+                        <div className="absolute inset-0 w-16 h-16 border-4 border-transparent border-t-blue-300 rounded-full animate-spin mx-auto" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
+                    </div>
+                    <h2 className="text-white text-xl font-semibold mb-2">Loading Board...</h2>
+                    <p className="text-white/70 text-sm">Setting up your workspace</p>
+                </div>
+            </div>
+        );
     }
 
-    // 3. Reordering Logic (Simple Array Move)
-    const column = boardData.columns[source.droppableId as keyof typeof boardData.columns];
-    const newItems = Array.from(column.items);
-    
-    // Remove from old index
-    const [removed] = newItems.splice(source.index, 1);
-    // Insert at new index
-    newItems.splice(destination.index, 0, removed);
-
-    const newColumn = { ...column, items: newItems };
-
-    setBoardData({
-      ...boardData,
-      columns: {
-        ...boardData.columns,
-        [newColumn.id]: newColumn,
-      },
-    });
-  };
-
-  return (
-    <div className="p-10 flex flex-col h-screen text-white">
-      <h1 className="text-3xl font-bold mb-8">My Trello Board</h1>
-      
-      <DragDropContext onDragEnd={onDragEnd}>
-        <div className="flex gap-4">
-          {boardData.columnOrder.map((colId) => {
-            const column = boardData.columns[colId as keyof typeof boardData.columns];
-            
-            return (
-              <div key={column.id} className="bg-gray-100 p-4 rounded w-80 text-black">
-                <h2 className="font-bold mb-4 text-lg">{column.title}</h2>
+    return (
+        <div className="h-screen flex flex-col">
+            {/* Enhanced Glassmorphism Header */}
+            <header className="glass-dark p-4 shadow-2xl border-b border-white/10 flex items-center justify-between px-6 relative overflow-hidden">
+                {/* Header background glow */}
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-transparent to-purple-500/10"></div>
                 
-                <Droppable droppableId={column.id}>
-                  {(provided) => (
-                    <div
-                      {...provided.droppableProps}
-                      ref={provided.innerRef}
-                      className="flex flex-col gap-2 min-h-[100px]"
-                    >
-                      {column.items.map((item, index) => (
-                        <Draggable key={item.id} draggableId={item.id} index={index}>
-                          {(provided) => (
-                            <div
-                              ref={provided.innerRef}
-                              {...provided.draggableProps}
-                              {...provided.dragHandleProps}
-                              className="bg-white p-3 rounded shadow hover:bg-gray-50"
-                            >
-                              {item.content}
-                            </div>
-                          )}
-                        </Draggable>
-                      ))}
-                      {provided.placeholder}
+                <div className="flex items-center gap-4 relative z-10">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center text-white font-bold shadow-xl transform hover:scale-110 transition-transform duration-200 border border-white/20">
+                        <span className="text-lg">T</span>
                     </div>
-                  )}
-                </Droppable>
-              </div>
-            );
-          })}
+                    <h1 className="text-white font-bold text-2xl tracking-tight drop-shadow-lg">
+                        Trello Clone
+                    </h1>
+                    <div className="hidden md:flex items-center gap-2 ml-4">
+                        <div className="px-3 py-1 bg-white/10 rounded-full text-white/80 text-sm font-medium border border-white/20">
+                            Personal Workspace
+                        </div>
+                    </div>
+                </div>
+                
+                <div className="flex items-center gap-4 relative z-10">
+                    <button className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all duration-200 border border-white/20 text-sm font-medium">
+                        Share
+                    </button>
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500 border-2 border-white/30 shadow-lg hover:scale-110 transition-transform duration-200 cursor-pointer"></div>
+                </div>
+            </header>
+
+            {/* Board Area */}
+            <main className="flex-1 overflow-x-auto overflow-y-hidden p-6"> 
+                <DragDropContext onDragEnd={onDragEnd}>
+                    <div className="flex gap-6 h-full items-start"> 
+                        {boardData.columnOrder.map((colId) => {
+                            const column = boardData.columns[colId];
+                            return (
+                                <Column 
+                                key = {column._id}
+                                id = {column._id}
+                                title = {column.title}
+                                taskIds = {column.taskIds}
+                                onAddTask={addTask}
+                                onDeleteTask={deleteTask}
+                                onDeleteColumn={deleteColumn}
+                                onUpdateColumn={updateColumn}
+                                onUpdateTask={updateTask}
+                                />
+                            );
+                        })}
+                        
+                        {/* Enhanced Add Column Button */}
+                        <button
+                            onClick={() => {
+                                const title = window.prompt("Enter column title:");
+                                if (title) addColumn(title);
+                            }}
+                            className="min-w-[280px] h-fit p-6 rounded-xl glass text-white hover:bg-white/30 transition-all duration-300 text-left font-semibold shadow-xl border border-white/20 flex items-center gap-3 group hover:scale-105 hover:shadow-2xl"
+                        >
+                            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center group-hover:bg-white/30 transition-colors duration-200">
+                                <span className="text-xl group-hover:scale-110 transition-transform duration-200">+</span>
+                            </div>
+                            <span className="text-base">Add another list</span>
+                        </button>
+                    </div>
+                </DragDropContext>
+            </main>
         </div>
-      </DragDropContext>
-    </div>
-  );
-}
+    );
+};
 
 export default App;

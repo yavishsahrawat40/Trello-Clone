@@ -13,3 +13,5 @@ export interface IBoardData {
     columns: { [key: string]: IColumn };
     columnOrder: string[];
 }
+
+export interface APIColumn { _id: string; title: string; taskIds: ITask[]; }
