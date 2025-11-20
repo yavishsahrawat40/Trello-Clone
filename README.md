@@ -61,7 +61,7 @@ A modern, full-stack Trello clone built with **React**, **TypeScript**, **Node.j
 ### Clone the Repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/yavishsahrawat40/Trello-Clone.git
 cd Trello-Clone
 ```
 
